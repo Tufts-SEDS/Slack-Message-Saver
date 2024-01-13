@@ -1,3 +1,5 @@
+# activate the venv for the script using source bin/.slack_bot/activate
+
 import os
 import json
 import gzip
