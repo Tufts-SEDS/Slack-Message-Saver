@@ -34,7 +34,7 @@ def replace_user_ids_with_names(text):
     user_ids = re.findall(r'<@(U\w+)>', text)
     for user_id in user_ids:
         # Lookup user info by user ID
-        user_info = client.users_info(user=user_id)
+        user_info = slack_client.users_info(user=user_id)
         username = user_info['user']['name']
         # Replace '<@U...>' with '@username'
         text = text.replace(f'<@{user_id}>', f'@{username}')
@@ -175,6 +175,7 @@ def doing_something_idk():
     # flushing out the memory for next days' messages
     global message_memory
     global username_dict
+    global file_memory
     message_memory = {}
     username_dict = {}
     file_memory = {}
