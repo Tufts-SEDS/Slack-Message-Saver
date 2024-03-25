@@ -7,12 +7,13 @@ import gzip
 import asyncio
 import threading
 import requests
+import random
+import schedule
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from slack_bolt import App
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 from slack_sdk import WebClient
-import schedule
 from pathlib import Path
 
 
@@ -26,10 +27,22 @@ message_memory = {}
 username_dict = {}
 file_memory = {}
 
+nick_comments = [
+    "I miss him so much!",
+    "I wish he was still here...",
+    "It hurts more than I can express, please come back daddy",
+    "I feel so lost without Nick",
+    "I can't believe he's actually gone.",
+    "I wish I had more time with dad.",
+    "You'll live on in my memories...",
+    "In his golden years, he was known as Young Stroker the Body Snatcher",
+    "I remember the times we used to play ball, he often complained about his back...",
+    "I love you dad"
+]
 
 
 # Replace user IDs with usernames, used gpt for this but it works
-def replace_user_ids_with_names(text):
+async def replace_user_ids_with_names(text):
     # Find all occurrences of '<@U...>'
     user_ids = re.findall(r'<@(U\w+)>', text)
     for user_id in user_ids:
@@ -41,7 +54,25 @@ def replace_user_ids_with_names(text):
     return text
 
 
-
+async def long_live_nick(text, channel):
+    if "old man" in text:
+        try:
+            filepath = "./oldmannick.png"
+            response = slack_client.files_upload_v2(
+                channel=channel,
+                file="oldmannick.png",
+                title="In loving memory of my dad, nickypoo martin",
+                initial_comment="Please, don't forget my dad...I want his legacy to live on...",
+            )
+            response = slack_client.files_upload(channel=channel, file=filepath)
+            assert response["file"]  # the uploaded file
+            chosen_comment = random.choice(nick_comments)
+            slack_client.chat_postMessage(
+                channel=channel,
+                text=chosen_comment
+            )
+        except:
+            pass
 
 ####### Message logging #######
 
@@ -55,7 +86,7 @@ def log_original_message(channel, ts, user, text):
         message_memory[channel] = {}
         
     if "<@U" in text:
-        text = replace_user_ids_with_names(text)
+        text = asyncio.run(replace_user_ids_with_names(text)) 
 
     # store the og message sent in the specific channel
     if user in username_dict:
@@ -63,6 +94,9 @@ def log_original_message(channel, ts, user, text):
     else:
         user_name = asyncio.run(get_user_name(user))
         username_dict[user] = user_name
+       
+    asyncio.run(long_live_nick(text, channel)) 
+        
     message_memory[channel][ts] = (user_name, text)
 
 def handle_message_change(channel, event):
@@ -82,12 +116,6 @@ def log_message(event):
         user, text, ts, channel = event["user"], event["text"], event["ts"], event["channel"]
         log_original_message(channel, ts, user, text)
 
-
-@app.event("file_shared")
-def log_file_shared(event):
-    if event["type"] == "file_shared":
-        file_info = slack_client.files_info(file=event["file_id"])
-        print(file_info)
 
 
 
