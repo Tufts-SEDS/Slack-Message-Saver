@@ -1,4 +1,4 @@
-# activate the venv for the script using source bin/.slack_bot/activate
+# activate the venv for the script using source ./slack_bot/bin/activate
 
 import os
 import re
